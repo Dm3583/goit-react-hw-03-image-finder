@@ -1,14 +1,12 @@
 import React, { Component } from 'react';
-import axios from 'axios';
 import './App.scss';
 import Searchbar from './Searchbar';
 import Button from './Button';
 import { LoaderTailSpin } from './Loader';
 import Modal from './Modal';
 import ImageGallery from './ImageGallery';
-
-const API_KEY = '19762883-8865d0dea9f1f7e21a434f769';
-const BASE_URL = 'https://pixabay.com/api/';
+import ContainerCentered from './ContainerCentered';
+import imagesApi from '../services/images-api';
 
 class App extends Component {
   state = {
@@ -16,10 +14,12 @@ class App extends Component {
     images: [],
     page: 1,
     per_page: 12,
-    isModalOpen: false,
-    isLoadMore: false,
+    showModal: false,
+    LoadMore: false,
     isLoading: false,
     error: null,
+    message: '',
+    LargeImage: '',
   };
 
   componentDidUpdate(prevProps, prevState) {
@@ -31,46 +31,117 @@ class App extends Component {
 
   getImages = () => {
     const { query, page, per_page } = this.state;
-    return axios
-      .get(
-        `${BASE_URL}?q=${query}&page=${page}&key=${API_KEY}&image_type=photo&orientation=horizontal&per_page=${per_page}`,
-      )
-      .then(response => response.data)
+    const options = { query, page, per_page };
+    imagesApi
+      .getImages(options)
       .then(data => {
-        console.log(data);
-        this.setState(({ images }) => ({ images: [...images, ...data.hits] }));
-        this.setState({ isLoading: false });
-        if (data.totalHits - this.state.page * this.state.per_page > 0) {
-          this.setState({ isLoadMore: true });
-          this.incrementPage();
-        } else {
-          this.setState({ isLoadMore: false });
-        }
-      });
+        this.galleryContentHandler(data);
+      })
+      .catch(error => this.setState({ error }))
+      .finally(() => this.setState({ isLoading: false }));
+  };
+
+  galleryContentHandler = data => {
+    if (data.totalHits === 0) {
+      this.setState({ message: 'There is no images for your query' });
+      return;
+    }
+    this.setState(prevState => ({
+      images: [...prevState.images, ...data.hits],
+    }));
+    if (data.totalHits - this.state.images.length > 0) {
+      this.loadMore();
+    } else {
+      this.setState({ LoadMore: false });
+    }
+    this.handleAutoScrollDown();
+  };
+
+  handleAutoScrollDown = () => {
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: 'smooth',
+    });
+  };
+
+  loadMore = () => {
+    this.setState(prevState => ({
+      page: prevState.page + 1,
+    }));
+    this.setState({ LoadMore: true });
   };
 
   onSubmit = query => {
-    this.setState({ query: query, page: 1, images: [] });
+    this.setState({
+      query: query,
+      page: 1,
+      images: [],
+      error: null,
+      message: '',
+      LoadMore: false,
+    });
   };
 
-  incrementPage = () => {
-    this.setState(({ page }) => ({ page: page + 1 }));
+  toggleModal = () => {
+    this.setState(({ showModal }) => ({ showModal: !showModal }));
+    if (this.state.showModal) {
+      this.setState({ LargeImage: '' });
+    }
+  };
+
+  showLargeImage = url => {
+    this.setState({ LargeImage: url });
+    this.toggleModal();
+  };
+
+  handleShowMore = () => {
+    this.setState({ isLoading: true });
+    this.getImages();
   };
 
   render() {
-    const { onSubmit, getImages } = this;
-    const { isModalOpen, images, isLoadMore, isLoading } = this.state;
+    const { onSubmit, handleShowMore, toggleModal, showLargeImage } = this;
+    const {
+      showModal,
+      images,
+      LoadMore,
+      isLoading,
+      error,
+      message,
+      LargeImage,
+    } = this.state;
+    const shouldRenderLoadMoreButton = LoadMore && !isLoading;
     return (
       <div className="App">
         <Searchbar onSubmit={onSubmit} />
-
-        {images.length > 0 && <ImageGallery images={images} />}
-        {isLoading && <LoaderTailSpin />}
-        {isLoadMore && !isLoading && (
-          <Button handleShowMore={getImages}>Load more</Button>
+        {images.length > 0 && (
+          <ImageGallery images={images} showLargeImage={showLargeImage} />
         )}
-
-        {isModalOpen && <Modal />}
+        {error && (
+          <ContainerCentered>
+            <p>Something went wrong ....</p>
+          </ContainerCentered>
+        )}
+        {isLoading && (
+          <ContainerCentered>
+            <LoaderTailSpin />
+          </ContainerCentered>
+        )}
+        {shouldRenderLoadMoreButton && (
+          <ContainerCentered>
+            <Button handleShowMore={handleShowMore} label="Show more" />
+          </ContainerCentered>
+        )}
+        {message && (
+          <ContainerCentered>
+            <p>{message}</p>
+          </ContainerCentered>
+        )}
+        {showModal && (
+          <Modal onClose={toggleModal}>
+            <img src={LargeImage} alt="" />
+          </Modal>
+        )}
       </div>
     );
   }
