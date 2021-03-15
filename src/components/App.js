@@ -95,7 +95,10 @@ class App extends Component {
   };
 
   handleShowMore = () => {
-    this.setState({ isLoading: true });
+    this.setState({
+      isLoading: true,
+      error: null
+    });
     this.getImages();
   };
 
