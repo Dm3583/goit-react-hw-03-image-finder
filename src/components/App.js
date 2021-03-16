@@ -15,11 +15,11 @@ class App extends Component {
     page: 1,
     per_page: 12,
     showModal: false,
-    LoadMore: false,
+    loadMore: false,
     isLoading: false,
     error: null,
     message: '',
-    LargeImage: '',
+    largeImage: '',
   };
 
   componentDidUpdate(prevProps, prevState) {
@@ -52,7 +52,7 @@ class App extends Component {
     if (data.totalHits - this.state.images.length > 0) {
       this.loadMore();
     } else {
-      this.setState({ LoadMore: false });
+      this.setState({ loadMore: false });
     }
     this.handleAutoScrollDown();
   };
@@ -68,7 +68,7 @@ class App extends Component {
     this.setState(prevState => ({
       page: prevState.page + 1,
     }));
-    this.setState({ LoadMore: true });
+    this.setState({ loadMore: true });
   };
 
   onSubmit = query => {
@@ -78,26 +78,26 @@ class App extends Component {
       images: [],
       error: null,
       message: '',
-      LoadMore: false,
+      loadMore: false,
     });
   };
 
   toggleModal = () => {
     this.setState(({ showModal }) => ({ showModal: !showModal }));
     if (this.state.showModal) {
-      this.setState({ LargeImage: '' });
+      this.setState({ largeImage: '' });
     }
   };
 
   showLargeImage = url => {
-    this.setState({ LargeImage: url });
+    this.setState({ largeImage: url });
     this.toggleModal();
   };
 
   handleShowMore = () => {
     this.setState({
       isLoading: true,
-      error: null
+      error: null,
     });
     this.getImages();
   };
@@ -107,13 +107,13 @@ class App extends Component {
     const {
       showModal,
       images,
-      LoadMore,
+      loadMore,
       isLoading,
       error,
       message,
-      LargeImage,
+      largeImage,
     } = this.state;
-    const shouldRenderLoadMoreButton = LoadMore && !isLoading;
+    const shouldRenderLoadMoreButton = loadMore && !isLoading;
     return (
       <div className="App">
         <Searchbar onSubmit={onSubmit} />
@@ -142,7 +142,7 @@ class App extends Component {
         )}
         {showModal && (
           <Modal onClose={toggleModal}>
-            <img src={LargeImage} alt="" />
+            <img src={largeImage} alt="" />
           </Modal>
         )}
       </div>

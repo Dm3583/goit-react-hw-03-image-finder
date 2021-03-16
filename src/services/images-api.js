@@ -8,7 +8,8 @@ const getImages = ({ query, page, per_page }) => {
     .get(
       `${BASE_URL}?q=${query}&page=${page}&key=${API_KEY}&image_type=photo&orientation=horizontal&per_page=${per_page}`,
     )
-    .then(response => response.data);
+    .then(response => response.data)
+    .catch(error => error);
 };
 
 export default { getImages };
